@@ -39,14 +39,13 @@ class Auth
     }
 
     /**
-     * @param string system_user_id 用户ID
-     * @param string url url地址
-     * @param  string urlParams  url参数
-     * @param  callable urlTargetType url串接验证方式
+     * @param int system_user_id 用户ID
+     * @param array $urlInfo url地址信息
+     * @param callable targetUrlType url串接验证方式
      * @return bool
      * @author crazyCater
      */
-    public function check(int $system_user_id = 0, string $url = '', array $urlParams = [], callable $urlTargetType = null)
+    public function check(int $system_user_id = 0, array $urlInfo = [], callable $checkUrlType = null, callable $targetUrlType = null)
     {
         if (!$this->config['auth_on']) {
             return true;
@@ -54,16 +53,31 @@ class Auth
         if (in_array($system_user_id, (array)$this->config['allow_userids'])) {
             return true;
         }
-        if (in_array($url, (array)$this->config['allow_urls'])) {
-            return true;
-        }
-        $this->urlTargetType = $urlTargetType ?? null;
         $this->system_user_id = abs(intval($system_user_id));
-        if ($this->system_user_id <= 0 || !$url) {
+        $this->urlInfo = $urlInfo;
+        $this->urlInfo['module'] = $this->urlInfo['module'] ?? '';
+        $this->urlInfo['version'] = $this->urlInfo['version'] ?? '';
+        $this->urlInfo['controller'] = $this->urlInfo['controller'] ?? '';
+        $this->urlInfo['action'] = $this->urlInfo['action'] ?? '';
+        $this->urlInfo['params'] = $this->urlInfo['params'] ? array_keys($this->urlInfo['params']) : [];
+        if ($this->system_user_id <= 0 || !$this->urlInfo || empty($this->urlInfo['controller']) || empty($this->urlInfo['action'])) {
             return false;
         }
+        $this->checkUrlType = $checkUrlType ?? null; 
+        $this->targetUrlType = $targetUrlType ?? null;
+
+        $url = $this->urlInfo['module'] ? $this->urlInfo['module'] . '/' : '';
+        $url .= $this->urlInfo['version'] ? $this->urlInfo['version'] . '/' : '';
+        $url .= $this->urlInfo['controller'] ? $this->urlInfo['controller'] . '/' : '';
+        $url .= $this->urlInfo['action'] ? $this->urlInfo['action'] : '';
+
+        $this->url = $this->checkUrlType ? call_user_func($this->checkUrlType, $this->urlInfo) : $url;
+        if (in_array($this->url, (array)$this->config['allow_urls'])) {
+            return true;
+        }
+
         $this->menuLists = null;
-        $cacheSessionKey = '__UserAuthLists__' . $this->system_user_id;
+        $cacheSessionKey = '__' . $this->urlInfo['module'] . '__' . $this->urlInfo['version'] . '__UserAuthLists__' . $this->system_user_id;
         $isSession = ($this->config['session'] && gettype($this->config['session']) == 'object') ? true : false;
         if ($isSession) {
             $this->session = $this->config['session'];
@@ -77,8 +91,6 @@ class Auth
         if (!$this->menuLists) {
             return false;
         }
-        $this->url = $url;
-        $this->urlParams = $urlParams ? array_keys($urlParams) : [];
         return $this->_checkUrl();
     }
 
@@ -86,21 +98,30 @@ class Auth
     protected function getUserMenuLists($menuId = [])
     {
         $SystemAuthMenu = new SystemAuthMenu($this->config);
-        $lists = $SystemAuthMenu->create()
-            ->where($this->config['menu_pk_field_name'], $menuId, 'in')
-            ->where('url', '', '!=')
+        $SystemAuthMenu->create()
+            ->where($this->config['menu_pk_field_name'], $menuId, 'in');
+        if ($this->urlInfo['module']) {
+            $SystemAuthMenu->where('module', $this->urlInfo['module']);
+        }
+        if ($this->urlInfo['version']) {
+            $SystemAuthMenu->where('version', $this->urlInfo['version']);
+        }
+        $lists = $SystemAuthMenu->where('url', '', '!=')
             ->where('status', 1)
             ->field('module,version,url,params')
             ->select();
         $menuLists = [];
         if ($lists) {
+
             foreach ($lists as $info) {
+                $url = $this->urlInfo['module'] ? $this->urlInfo['module'] . '/' : '';
+                $url .= $this->urlInfo['version'] ? $this->urlInfo['version'] . '/' : '';
+                $url .= $info['url'] ? $info['url'] : '';
                 $menuLists[] = [
-                    'url' => $this->urlTargetType ? call_user_func($this->urlTargetType, $info) : $info['module'] . '/' . $info['version'] . '/' . $info['url'],
+                    'url' => $this->targetUrlType ? call_user_func($this->targetUrlType, $info) : $url,
                     'params' => array_filter(explode(',', $info['params']))
                 ];
             }
-            print_r($menuLists);
         }
         return $menuLists;
     }
@@ -137,7 +158,7 @@ class Auth
             return true;
         }
         $res = false;
-        foreach ($this->urlParams as $key => $val) {
+        foreach ($this->urlInfo['params'] as $key => $val) {
             if (in_array($val, $params)) {
                 $res = true;
             }
