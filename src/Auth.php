@@ -60,8 +60,7 @@ class Auth
         $this->urlInfo['controller'] = $this->urlInfo['controller'] ?? '';
         $this->urlInfo['action'] = $this->urlInfo['action'] ?? '';
         $this->urlInfo['params'] = $this->urlInfo['params'] ? array_keys($this->urlInfo['params']) : [];
-        if ($this->system_user_id <= 0 || !$this->urlInfo || empty($this->urlInfo['controller']) || empty($this->urlInfo['action'])) {
-            return false;
+        if (!$this->urlInfo || empty($this->urlInfo['controller']) || empty($this->urlInfo['action'])) {
         }
         $this->checkUrlType = $checkUrlType ?? null;
         $this->targetUrlType = $targetUrlType ?? null;
@@ -72,10 +71,13 @@ class Auth
         $url .= $this->urlInfo['action'] ? $this->urlInfo['action'] : '';
 
         $this->url = $this->checkUrlType ? call_user_func($this->checkUrlType, $this->urlInfo) : $url;
+
         if (in_array($this->url, (array)$this->config['allow_urls'])) {
             return true;
         }
-
+        if ($this->system_user_id <= 0) {
+            return false;
+        }
         $this->menuLists = null;
         $cacheSessionKey = '__' . $this->urlInfo['module'] . '__' . $this->urlInfo['version'] . '__UserAuthLists__' . $this->system_user_id;
         $isSession = ($this->config['session'] && gettype($this->config['session']) == 'object') ? true : false;
@@ -91,6 +93,7 @@ class Auth
         if (!$this->menuLists) {
             return false;
         }
+
         return $this->_checkUrl();
     }
 
