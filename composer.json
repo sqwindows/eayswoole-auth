@@ -1,5 +1,6 @@
 {
     "name": "crazycater/auth",
+    "key": "easyswoole-rbac,auth ,rbac",
     "authors": [
         {
             "name": "crazycater",

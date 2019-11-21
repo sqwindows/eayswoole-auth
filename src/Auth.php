@@ -16,8 +16,8 @@ class Auth
 
     protected $config = [
         'auth_on' => true,                // 认证开关
-        'session' => false,                   // 认证方式:false为实时认证,传SessionDriver则为session认证。
-        'mysql_prefix' => 'cater_',          //表名前缀
+        'session' => false,                // 认证方式:false为实时认证,传SessionDriver则为session认证。
+        'mysql_prefix' => 'cater_',       //表名前缀
         'system_auth_group' => 'system_auth_group',        // 用户组数据表名
         'system_auth_group_access' => 'system_auth_group_access', // 用户-用户组关系表
         'system_auth_menu' => 'system_auth_menu',         // 权限规则表
@@ -63,7 +63,7 @@ class Auth
         if ($this->system_user_id <= 0 || !$this->urlInfo || empty($this->urlInfo['controller']) || empty($this->urlInfo['action'])) {
             return false;
         }
-        $this->checkUrlType = $checkUrlType ?? null; 
+        $this->checkUrlType = $checkUrlType ?? null;
         $this->targetUrlType = $targetUrlType ?? null;
 
         $url = $this->urlInfo['module'] ? $this->urlInfo['module'] . '/' : '';
