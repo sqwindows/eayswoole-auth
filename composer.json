@@ -1,5 +1,5 @@
 {
-    "name": "crazycater/easyswoole-auth",
+    "name": "crazycater/auth",
     "authors": [
         {
             "name": "crazycater",
@@ -14,7 +14,6 @@
     "require": {
         "php": "^7.1",
         "easyswoole/orm": "^1.1.3",
-        "easyswoole/policy": "^1.0",
         "ext-json":">=1.0"
     }
 }
