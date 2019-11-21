@@ -4,7 +4,7 @@ EasySwooleAuth RBAC版 权限验证。
 ```bash
 composer require crazycater/easyswoole-auth
 ```
-## 使用方法
+## 使用方法 
 
 1.控制器调用方法
 ```php
