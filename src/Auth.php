@@ -29,6 +29,14 @@ class Auth
         'allow_userids' => [],  //不用检测权限的用户编号
         'allow_urls' => [], //不用检测权限的URL
     ];
+    private $systemUserId = 0; //用户ID
+    private $checkUrlInfo = [];//需验证的URL地址信息
+    private $checkUrlType = null; //需验证的url串接方法
+    private $targetUrlType = null; // 数据库url串接方法
+    private $checkUrl = '';//需检测的URL地址字符串
+    private $menuLists = []; //解析后的权限菜单一维数组ids
+    private $userMenuLists = []; //用户有权限的菜单列表,含URL为空的
+    private $session = null;//Seesion对象
 
     public function __construct($config = [])
     {
@@ -39,105 +47,140 @@ class Auth
     }
 
     /**
-     * @param int system_user_id 用户ID
-     * @param array $urlInfo url地址信息
-     * @param callable targetUrlType url串接验证方式
+     * @param int systemUserId 用户ID
+     * @param array $checkUrlInfo url地址信息
+     * @param callable checkUrlType 需验证的url串接方法
+     * @param callable targetUrlType 数据库url串接方法
      * @return bool
      * @author crazyCater
      */
-    public function check(int $system_user_id = 0, array $urlInfo = [], callable $checkUrlType = null, callable $targetUrlType = null)
+    public function check(int $systemUserId = 0, array $checkUrlInfo = [], callable $checkUrlType = null, callable $targetUrlType = null): bool
     {
+        $this->systemUserId = abs(intval($systemUserId));
+        $this->checkUrlInfo = $this->_setcheckUrlInfo($checkUrlInfo);
+        $this->checkUrlType = $checkUrlType ?? null;
+        $this->targetUrlType = $targetUrlType ?? null;
+        $this->checkUrl = $this->_setcheckUrl();
+
         if (!$this->config['auth_on']) {
             return true;
         }
-        if (in_array($system_user_id, (array)$this->config['allow_userids'])) {
+        if (in_array($this->systemUserId, (array)$this->config['allow_userids'])) {
             return true;
         }
-        $this->system_user_id = abs(intval($system_user_id));
-        $this->urlInfo = $urlInfo;
-        $this->urlInfo['module'] = $this->urlInfo['module'] ?? '';
-        $this->urlInfo['version'] = $this->urlInfo['version'] ?? '';
-        $this->urlInfo['controller'] = $this->urlInfo['controller'] ?? '';
-        $this->urlInfo['action'] = $this->urlInfo['action'] ?? '';
-        $this->urlInfo['params'] = $this->urlInfo['params'] ? array_keys($this->urlInfo['params']) : [];
-        if (!$this->urlInfo || empty($this->urlInfo['controller']) || empty($this->urlInfo['action'])) {
-        }
-        $this->checkUrlType = $checkUrlType ?? null;
-        $this->targetUrlType = $targetUrlType ?? null;
-
-        $url = $this->urlInfo['module'] ? $this->urlInfo['module'] . '/' : '';
-        $url .= $this->urlInfo['version'] ? $this->urlInfo['version'] . '/' : '';
-        $url .= $this->urlInfo['controller'] ? $this->urlInfo['controller'] . '/' : '';
-        $url .= $this->urlInfo['action'] ? $this->urlInfo['action'] : '';
-
-        $this->url = $this->checkUrlType ? call_user_func($this->checkUrlType, $this->urlInfo) : $url;
-
-        if (in_array($this->url, (array)$this->config['allow_urls'])) {
-            return true;
-        }
-        if ($this->system_user_id <= 0) {
+        if (!$this->checkUrlInfo || empty($this->checkUrlInfo['controller']) || empty($this->checkUrlInfo['action'])) {
             return false;
         }
+        if (in_array($this->checkUrl, (array)$this->config['allow_urls'])) {
+            return true;
+        }
+        if ($this->systemUserId <= 0) {
+            return false;
+        }
+        $this->menuLists = $this->_getUserSessionMenuAuths();
+        return $this->_checkAuth();
+    }
+
+    /**
+     * @param int systemUserId 用户ID
+     * @param array $checkUrlInfo url地址信息
+     * @return array
+     * @author crazyCater
+     */
+
+    public function checkMenu($systemUserId = 0, $checkUrlInfo = [])
+    {
+        $this->systemUserId = abs(intval($systemUserId));
+        $this->checkUrlInfo = $this->_setcheckUrlInfo($checkUrlInfo);
+        $this->checkUrl = $this->_setcheckUrl();
+        $this->menuLists = $this->_getUserSessionMenuAuths();
+        return ['auth' => $this->_checkAuth(), 'userMenuLists' => $this->userMenuLists];
+    }
+
+    public function getUserMenuLists()
+    {
+        return $this->userMenuLists;
+    }
+
+    public function getMenuLists()
+    {
+        return $this->menuLists;
+    }
+
+    private function _parseUserMenuLists()
+    {
+        if (!$this->userMenuLists) {
+            return [];
+        }
+        $menuLists = [];
+        foreach ($this->userMenuLists as $key => $val) {
+            if ($val['url'] != '')
+                $menuLists[] = [
+                    'module' => $val['module'],
+                    'version' => $val['version'],
+                    'url' => $val['url'],
+                    'params' => $val['params'],
+                ];
+        }
+        if ($menuLists) {
+            $newMenuLists = [];
+            foreach ($menuLists as $info) {
+                $url = $this->checkUrlInfo['module'] ? $this->checkUrlInfo['module'] . '/' : '';
+                $url .= $this->checkUrlInfo['version'] ? $this->checkUrlInfo['version'] . '/' : '';
+                $url .= $info['url'] ? $info['url'] : '';
+                $newMenuLists[] = [
+                    'url' => $this->targetUrlType ? call_user_func($this->targetUrlType, $info) : $url,
+                    'params' => array_filter(explode(',', $info['params']))
+                ];
+            }
+        }
+
+        return $this->menuLists = $newMenuLists;
+    }
+
+
+    private function _getUserMenuLists($menuId = [])
+    {
+        $SystemAuthMenu = new SystemAuthMenu($this->config);
+        $SystemAuthMenu->create();
+        $SystemAuthMenu->where($this->config['menu_pk_field_name'], $menuId, 'in');
+        if ($this->checkUrlInfo['module']) {
+            $SystemAuthMenu->where('module', $this->checkUrlInfo['module']);
+        }
+        if ($this->checkUrlInfo['version']) {
+            $SystemAuthMenu->where('version', $this->checkUrlInfo['version']);
+        }
+        $this->userMenuLists = $SystemAuthMenu->where('status', 1)->select();
+         return $this->userMenuLists;
+
+    }
+
+    private function _getUserSessionMenuAuths()
+    {
         $this->menuLists = null;
-        $cacheSessionKey = '__' . $this->urlInfo['module'] . '__' . $this->urlInfo['version'] . '__UserAuthLists__' . $this->system_user_id;
+        $cacheSessionKey = '__' . $this->checkUrlInfo['module'] . '__' . $this->checkUrlInfo['version'] . '__UserAuthLists__' . $this->systemUserId;
         $isSession = ($this->config['session'] && gettype($this->config['session']) == 'object') ? true : false;
         if ($isSession) {
             $this->session = $this->config['session'];
             $this->menuLists = $this->session->get($cacheSessionKey);
         }
         if (!$this->menuLists) {
-            $this->menuLists = $this->getUserMenuLists($this->getUserMenuIds($this->system_user_id));
+            $this->menuLists = $this->_parseUserMenuLists($this->_getUserMenuLists($this->_getUserMenuIds($this->systemUserId)));
             if ($isSession)
                 $this->session->set($cacheSessionKey, $this->menuLists);
         }
-        if (!$this->menuLists) {
-            return false;
-        }
-
-        return $this->_checkUrl();
+        return $this->menuLists;
     }
 
-
-    protected function getUserMenuLists($menuId = [])
+    private function _getUserMenuIds($systemUserId = 0)
     {
-        $SystemAuthMenu = new SystemAuthMenu($this->config);
-        $SystemAuthMenu->create()
-            ->where($this->config['menu_pk_field_name'], $menuId, 'in');
-        if ($this->urlInfo['module']) {
-            $SystemAuthMenu->where('module', $this->urlInfo['module']);
-        }
-        if ($this->urlInfo['version']) {
-            $SystemAuthMenu->where('version', $this->urlInfo['version']);
-        }
-        $lists = $SystemAuthMenu->where('url', '', '!=')
-            ->where('status', 1)
-            ->field('module,version,url,params')
-            ->select();
-        $menuLists = [];
-        if ($lists) {
-
-            foreach ($lists as $info) {
-                $url = $this->urlInfo['module'] ? $this->urlInfo['module'] . '/' : '';
-                $url .= $this->urlInfo['version'] ? $this->urlInfo['version'] . '/' : '';
-                $url .= $info['url'] ? $info['url'] : '';
-                $menuLists[] = [
-                    'url' => $this->targetUrlType ? call_user_func($this->targetUrlType, $info) : $url,
-                    'params' => array_filter(explode(',', $info['params']))
-                ];
-            }
-        }
-        return $menuLists;
-    }
-
-    protected function getUserMenuIds($system_user_id = 0)
-    {
-        if ($system_user_id <= 0) {
+        if ($systemUserId <= 0) {
             return [];
         }
         $SystemAuthGroupAccess = new SystemAuthGroupAccess($this->config);
         $lists = $SystemAuthGroupAccess->alias('groupAccess')
             ->join($this->prefix . 'system_auth_group AS `group`', 'group.' . $this->config['group_field_name'] . ' = groupAccess.' . $this->config['group_field_name'])
-            ->where('groupAccess.' . $this->config['user_field_name'], $system_user_id)
+            ->where('groupAccess.' . $this->config['user_field_name'], $systemUserId)
             ->field('group.' . $this->config['rules_field_name'])
             ->select();
         $rules = [];
@@ -161,7 +204,7 @@ class Auth
             return true;
         }
         $res = false;
-        foreach ($this->urlInfo['params'] as $key => $val) {
+        foreach ($this->checkUrlInfo['params'] as $key => $val) {
             if (in_array($val, $params)) {
                 $res = true;
             }
@@ -170,11 +213,34 @@ class Auth
 
     }
 
-    private function _checkUrl(): bool
+    private function _setcheckUrl(): string
     {
+        $url = $this->checkUrlInfo['module'] ? $this->checkUrlInfo['module'] . '/' : '';
+        $url .= $this->checkUrlInfo['version'] ? $this->checkUrlInfo['version'] . '/' : '';
+        $url .= $this->checkUrlInfo['controller'] ? ($this->checkUrlInfo['controller'] == '/' ? '/' : $this->checkUrlInfo['controller'] . '/') : '';
+        $url .= $this->checkUrlInfo['action'] ? $this->checkUrlInfo['action'] : '';
+        $this->checkUrl = $this->checkUrlType ? call_user_func($this->checkUrlType, $this->checkUrlInfo) : $url;
+        return $this->checkUrl;
+    }
+
+    private function _setcheckUrlInfo($checkUrlInfo = []): array
+    {
+        $this->checkUrlInfo['module'] = $checkUrlInfo['module'] ?? '';
+        $this->checkUrlInfo['version'] = $checkUrlInfo['version'] ?? '';
+        $this->checkUrlInfo['controller'] = $checkUrlInfo['controller'] ?? '';
+        $this->checkUrlInfo['action'] = $checkUrlInfo['action'] ?? '';
+        $this->checkUrlInfo['params'] = !empty($checkUrlInfo['params']) ? array_keys($checkUrlInfo['params']) : [];
+        return $this->checkUrlInfo;
+    }
+
+    private function _checkAuth(): bool
+    {
+        if (!$this->menuLists) {
+            return false;
+        }
         $res = false;
         foreach ($this->menuLists as $key => $val) {
-            if ($this->url === $val['url']) {
+            if ($this->checkUrl === $val['url']) {
                 $res = true;
                 if ($this->_checkParams($val['params']) === false) {
                     $res = false;
