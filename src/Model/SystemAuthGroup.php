@@ -27,6 +27,7 @@ class SystemAuthGroup extends Model
         $table->colVarChar('title')->setColumnLimit(64)->setIsNotNull()->setColumnComment('分组名称');
         $table->colVarChar('description')->setColumnLimit(64)->setIsNotNull()->setDefaultValue('')->setColumnComment('分组描述');
         $table->colVarChar('module')->setColumnLimit(32)->setIsNotNull()->setDefaultValue('Admin')->setColumnComment('隶属模型');
+        $table->colInt('module_id', 10)->setIsNotNull()->setDefaultValue(0)->setColumnComment('数据编号');
         $table->colTinyInt('status', 1)->setIsNotNull()->setDefaultValue(1)->setColumnComment('分组状态');
         $table->colText('menus')->setIsNotNull()->setDefaultValue('')->setColumnComment('规则编号');
         $table->colInt('create_time', 10)->setIsNotNull()->setDefaultValue(0)->setColumnComment('创建时间');
@@ -36,4 +37,25 @@ class SystemAuthGroup extends Model
         $table->indexNormal('status', 'status');
         return $table;
     }
+    public function getLists($module = 'Admin', $pid = 0, $title = '')
+    {
+        $this->trace();
+        if ($title) {
+            $this->where('title', $title, 'like');
+        }
+        $lists = $this->where('module', $module)->where('pid', $pid)->order('sort', 'DESC')->order($this->schemaInfo()->getPkFiledName(), 'DESC')->select();
+        return $lists;
+    }
+
+    public function getTree($module = 'Admin', $format = false)
+    {
+        $lists = $this->trace()->where('module', $module)->where('status', 1)->order('sort', 'DESC')->order($this->schemaInfo()->getPkFiledName(), 'DESC')->select();
+        $Tree = new \CrazyCater\Tree;
+        $lists = $Tree->list_to_tree($lists, $this->schemaInfo()->getPkFiledName());
+        if ($format === true) {
+            $lists = $Tree->toFormatTree($lists, $this->schemaInfo()->getPkFiledName());
+        }
+        return $lists;
+    }
+
 }
