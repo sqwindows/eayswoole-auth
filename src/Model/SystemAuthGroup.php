@@ -27,7 +27,6 @@ class SystemAuthGroup extends Model
         $table->colVarChar('title')->setColumnLimit(64)->setIsNotNull()->setColumnComment('分组名称');
         $table->colVarChar('description')->setColumnLimit(64)->setIsNotNull()->setDefaultValue('')->setColumnComment('分组描述');
         $table->colVarChar('module')->setColumnLimit(32)->setIsNotNull()->setDefaultValue('Admin')->setColumnComment('隶属模型');
-        $table->colVarChar('version')->setColumnLimit(32)->setIsNotNull()->setDefaultValue('V1')->setColumnComment('版本名称');
         $table->colTinyInt('status', 1)->setIsNotNull()->setDefaultValue(1)->setColumnComment('分组状态');
         $table->colText('menus')->setIsNotNull()->setDefaultValue('')->setColumnComment('规则编号');
         $table->colInt('create_time', 10)->setIsNotNull()->setDefaultValue(0)->setColumnComment('创建时间');
@@ -35,7 +34,6 @@ class SystemAuthGroup extends Model
         $table->indexNormal('title', 'title');
         $table->indexNormal('module', 'module');
         $table->indexNormal('status', 'status');
-        $table->indexNormal('version', 'version');
         return $table;
     }
 }

@@ -7,7 +7,7 @@ composer require crazycater/easyswoole-auth
 ## 使用方法
 
 1.控制器调用方法
-```php
+```php 
      $Auth = new \CrazyCater\EasySwooleAuth\Auth([
           'session' => $this->session(),    // 认证方式:false为实时认证,传SessionDriver则为session认证。 默认：false实时认证
           'allow_userids' => [10000],  //不用检测权限的用户编号  默认空数组
@@ -30,7 +30,6 @@ composer require crazycater/easyswoole-auth
      //默认验证方法
       $authUrl = [
           'module' => $this->moduleName,//项目分组可传可不传  用于多个项目分组
-          'version' => $this->moduleVersion,//可传可不传   用于多个项目分组版本
           'controller' => $this->controllerName,//必须传
           'action' => $this->actionName,//必须传
           'params' => $this->request()->getRequestParam() //可传可不传
@@ -57,7 +56,6 @@ composer require crazycater/easyswoole-auth
    `title` varchar(64) NOT NULL COMMENT '分组名称',
    `description` varchar(64) NOT NULL DEFAULT '' COMMENT '分组描述',
    `module` varchar(32) NOT NULL DEFAULT 'Admin' COMMENT '隶属模型',
-   `version` varchar(32) NOT NULL DEFAULT 'V1' COMMENT '版本名称',
    `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '分组状态',
    `menus` text NOT NULL DEFAULT '' COMMENT '规则编号',
    `create_time` int(10) NOT NULL DEFAULT 0 COMMENT '创建时间',
@@ -65,7 +63,6 @@ composer require crazycater/easyswoole-auth
    INDEX `title` (`title`),
    INDEX `module` (`module`),
    INDEX `status` (`status`),
-   INDEX `version` (`version`)
  )
  ENGINE = INNODB DEFAULT COLLATE = 'utf8_general_ci' COMMENT = '权限分组表';
  
@@ -86,7 +83,6 @@ composer require crazycater/easyswoole-auth
    `system_auth_menu_id` bigint(20) NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '菜单编号',
    `title` varchar(64) NOT NULL COMMENT '菜单名称',
    `module` varchar(32) NOT NULL DEFAULT 'Admin' COMMENT '隶属模型',
-   `version` varchar(32) NOT NULL DEFAULT 'V1' COMMENT '隶属版本',
    `url` varchar(200) NOT NULL COMMENT '菜单地址',
    `icon` varchar(200) NOT NULL COMMENT '菜单图标',
    `pid` int(10) NOT NULL DEFAULT 0 COMMENT '父级编号',
@@ -98,7 +94,6 @@ composer require crazycater/easyswoole-auth
    `update_time` int(10) NOT NULL DEFAULT 0 COMMENT '更新时间',
    INDEX `title` (`title`),
    INDEX `module` (`module`),
-   INDEX `version` (`version`),
    INDEX `url` (`url`),
    INDEX `pid` (`pid`),
    INDEX `sort` (`sort`),

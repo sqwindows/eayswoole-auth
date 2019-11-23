@@ -28,7 +28,6 @@ class SystemAuthMenu extends Model
         $table->colBigInt('system_auth_menu_id', 20)->setColumnComment('菜单编号')->setIsAutoIncrement()->setIsPrimaryKey();
         $table->colVarChar('title')->setColumnLimit(64)->setIsNotNull()->setColumnComment('菜单名称');
         $table->colVarChar('module')->setColumnLimit(32)->setIsNotNull()->setDefaultValue('Admin')->setColumnComment('隶属模型');
-        $table->colVarChar('version')->setColumnLimit(32)->setIsNotNull()->setDefaultValue('V1')->setColumnComment('隶属版本');
         $table->colVarChar('url')->setColumnLimit(200)->setIsNotNull()->setColumnComment('菜单地址');
         $table->colVarChar('params')->setColumnLimit(500)->setIsNotNull()->setColumnComment('地址参数');
         $table->colVarChar('icon')->setColumnLimit(200)->setIsNotNull()->setColumnComment('菜单图标');
@@ -41,7 +40,6 @@ class SystemAuthMenu extends Model
         $table->colInt('update_time', 10)->setDefaultValue(0)->setIsNotNull()->setColumnComment('更新时间');
         $table->indexNormal('title', 'title');
         $table->indexNormal('module', 'module');
-        $table->indexNormal('version', 'version');
         $table->indexNormal('url', 'url');
         $table->indexNormal('pid', 'pid');
         $table->indexNormal('sort', 'sort');

@@ -117,7 +117,6 @@ class Auth
             if ($val['url'] != '')
                 $menuLists[] = [
                     'module' => $val['module'],
-                    'version' => $val['version'],
                     'url' => $val['url'],
                     'params' => $val['params'],
                 ];
@@ -126,7 +125,6 @@ class Auth
             $newMenuLists = [];
             foreach ($menuLists as $info) {
                 $url = $this->checkUrlInfo['module'] ? $this->checkUrlInfo['module'] . '/' : '';
-                $url .= $this->checkUrlInfo['version'] ? $this->checkUrlInfo['version'] . '/' : '';
                 $url .= $info['url'] ? $info['url'] : '';
                 $newMenuLists[] = [
                     'url' => $this->targetUrlType ? call_user_func($this->targetUrlType, $info) : $url,
@@ -147,9 +145,6 @@ class Auth
         if ($this->checkUrlInfo['module']) {
             $SystemAuthMenu->where('module', $this->checkUrlInfo['module']);
         }
-        if ($this->checkUrlInfo['version']) {
-            $SystemAuthMenu->where('version', $this->checkUrlInfo['version']);
-        }
         $this->userMenuLists = $SystemAuthMenu->where('status', 1)->select();
          return $this->userMenuLists;
 
@@ -158,7 +153,7 @@ class Auth
     private function _getUserSessionMenuAuths()
     {
         $this->menuLists = null;
-        $cacheSessionKey = '__' . $this->checkUrlInfo['module'] . '__' . $this->checkUrlInfo['version'] . '__UserAuthLists__' . $this->systemUserId;
+        $cacheSessionKey = '__' . $this->checkUrlInfo['module'] . '__UserAuthLists__' . $this->systemUserId;
         $isSession = ($this->config['session'] && gettype($this->config['session']) == 'object') ? true : false;
         if ($isSession) {
             $this->session = $this->config['session'];
@@ -216,7 +211,6 @@ class Auth
     private function _setcheckUrl(): string
     {
         $url = $this->checkUrlInfo['module'] ? $this->checkUrlInfo['module'] . '/' : '';
-        $url .= $this->checkUrlInfo['version'] ? $this->checkUrlInfo['version'] . '/' : '';
         $url .= $this->checkUrlInfo['controller'] ? ($this->checkUrlInfo['controller'] == '/' ? '/' : $this->checkUrlInfo['controller'] . '/') : '';
         $url .= $this->checkUrlInfo['action'] ? $this->checkUrlInfo['action'] : '';
         $this->checkUrl = $this->checkUrlType ? call_user_func($this->checkUrlType, $this->checkUrlInfo) : $url;
@@ -226,7 +220,6 @@ class Auth
     private function _setcheckUrlInfo($checkUrlInfo = []): array
     {
         $this->checkUrlInfo['module'] = $checkUrlInfo['module'] ?? '';
-        $this->checkUrlInfo['version'] = $checkUrlInfo['version'] ?? '';
         $this->checkUrlInfo['controller'] = $checkUrlInfo['controller'] ?? '';
         $this->checkUrlInfo['action'] = $checkUrlInfo['action'] ?? '';
         $this->checkUrlInfo['params'] = !empty($checkUrlInfo['params']) ? array_keys($checkUrlInfo['params']) : [];
