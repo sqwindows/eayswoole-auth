@@ -30,6 +30,19 @@ class Model extends AbstractModel
         parent::__construct($config);
     }
 
+    public static function create(array $data = []): AbstractModel
+    {
+        return parent::create($data)->onQuery(function ($ret, $builder, $start) {
+            $redis = new \App\Extend\Redis\Redis;
+            $lastQuery = $redis->get('mysql_trace');
+            $lastQuery[] = [
+                'sql' => $builder->getLastQuery(),
+                'time' => microtime(true) - $start
+            ];
+            $redis->set('mysql_trace', $lastQuery);
+        });
+    }
+
     protected function getCreateTimeAttr($data)
     {
         return date('Y-m-d H:i:s', $data);
@@ -84,18 +97,6 @@ class Model extends AbstractModel
             $fields = $allFields;
         }
         return parent::field($fields);
-    }
-
-    public function trace($ret, $builder, $start)
-    {
-        $redis = new \App\Extend\Redis\Redis;
-        $lastQuery = $redis->get('mysql_trace');
-        $lastQuery[] = [
-            'sql' => $builder->getLastQuery(),
-            'time' => microtime(true) - $start
-        ];
-        $redis->set('mysql_trace', $lastQuery);
-
     }
 
 
