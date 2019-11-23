@@ -47,6 +47,18 @@ class Auth
     }
 
     /**
+     * Mysql回调事件
+     * @param callable call  回调函数
+     * @return object Auth
+     * @author crazyCater
+     */
+    public function onMysqlCall(callable $call)
+    {
+        $this->config['call'] = $call;
+        return $this;
+    }
+
+    /**
      * @param int systemUserId 用户ID
      * @param array $checkUrlInfo url地址信息
      * @param callable checkUrlType 需验证的url串接方法
@@ -140,13 +152,13 @@ class Auth
     private function _getUserMenuLists($menuId = [])
     {
         $SystemAuthMenu = new SystemAuthMenu($this->config);
-        $SystemAuthMenu->create();
+        $SystemAuthMenu->trace();
         $SystemAuthMenu->where($this->config['menu_pk_field_name'], $menuId, 'in');
         if ($this->checkUrlInfo['module']) {
             $SystemAuthMenu->where('module', $this->checkUrlInfo['module']);
         }
         $this->userMenuLists = $SystemAuthMenu->where('status', 1)->select();
-         return $this->userMenuLists;
+        return $this->userMenuLists;
 
     }
 
@@ -173,6 +185,7 @@ class Auth
             return [];
         }
         $SystemAuthGroupAccess = new SystemAuthGroupAccess($this->config);
+        $SystemAuthGroupAccess->trace();
         $lists = $SystemAuthGroupAccess->alias('groupAccess')
             ->join($this->prefix . 'system_auth_group AS `group`', 'group.' . $this->config['group_field_name'] . ' = groupAccess.' . $this->config['group_field_name'])
             ->where('groupAccess.' . $this->config['user_field_name'], $systemUserId)

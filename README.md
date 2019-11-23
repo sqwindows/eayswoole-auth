@@ -7,7 +7,7 @@ composer require crazycater/easyswoole-auth
 ## 使用方法
 
 1.控制器调用方法
-```php 
+```php
      $Auth = new \CrazyCater\EasySwooleAuth\Auth([
           'session' => $this->session(),    // 认证方式:false为实时认证,传SessionDriver则为session认证。 默认：false实时认证
           'allow_userids' => [10000],  //不用检测权限的用户编号  默认空数组
