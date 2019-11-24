@@ -151,9 +151,13 @@ class Auth
 
     private function _getUserMenuLists($menuId = [])
     {
+        if (!$menuId) {
+            return [];
+        }
         $SystemAuthMenu = new SystemAuthMenu($this->config);
         $SystemAuthMenu->create();
-        $SystemAuthMenu->where($this->config['menu_pk_field_name'], $menuId, 'in');
+        if ($menuId !== true && is_array($menuId))
+            $SystemAuthMenu->where($this->config['menu_pk_field_name'], $menuId, 'in');
         if ($this->checkUrlInfo['module']) {
             $SystemAuthMenu->where('module', $this->checkUrlInfo['module']);
         }
@@ -172,7 +176,11 @@ class Auth
             $this->menuLists = $this->session->get($cacheSessionKey);
         }
         if (!$this->menuLists) {
-            $this->menuLists = $this->_parseUserMenuLists($this->_getUserMenuLists($this->_getUserMenuIds($this->systemUserId)));
+            if (in_array($this->systemUserId, $this->config['allow_userids'])) {
+                $this->menuLists = $this->_parseUserMenuLists($this->_getUserMenuLists(true));
+            } else {
+                $this->menuLists = $this->_parseUserMenuLists($this->_getUserMenuLists($this->_getUserMenuIds($this->systemUserId)));
+            }
             if ($isSession)
                 $this->session->set($cacheSessionKey, $this->menuLists);
         }
