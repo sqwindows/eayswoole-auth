@@ -152,7 +152,7 @@ class Auth
     private function _getUserMenuLists($menuId = [])
     {
         $SystemAuthMenu = new SystemAuthMenu($this->config);
-        $SystemAuthMenu->trace();
+        $SystemAuthMenu->create();
         $SystemAuthMenu->where($this->config['menu_pk_field_name'], $menuId, 'in');
         if ($this->checkUrlInfo['module']) {
             $SystemAuthMenu->where('module', $this->checkUrlInfo['module']);
@@ -185,7 +185,7 @@ class Auth
             return [];
         }
         $SystemAuthGroupAccess = new SystemAuthGroupAccess($this->config);
-        $SystemAuthGroupAccess->trace();
+        $SystemAuthGroupAccess->create();
         $lists = $SystemAuthGroupAccess->alias('groupAccess')
             ->join($this->prefix . 'system_auth_group AS `group`', 'group.' . $this->config['group_field_name'] . ' = groupAccess.' . $this->config['group_field_name'])
             ->where('groupAccess.' . $this->config['user_field_name'], $systemUserId)

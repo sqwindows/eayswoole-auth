@@ -27,15 +27,11 @@ class Model extends AbstractModel
         $tableName = \EasySwoole\Utility\Str::snake(array_pop($className));
         $tableName = !empty($this->config[$tableName]) ? $this->config[$tableName] : $tableName;
         $this->tableName = $this->tableName ? $this->tableName : $prefix . $tableName;
+        !empty($this->config['call']) && $this->onQuery($this->config['call']);
         parent::__construct($config);
     }
 
-    public function trace(array $data = [])
-    {
-        !empty($this->config['call']) && $this->onQuery($this->config['call']);
-        return $this->create($data);
-    }
-
+    
     protected function getCreateTimeAttr($data)
     {
         return date('Y-m-d H:i:s', $data);
