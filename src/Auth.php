@@ -47,18 +47,6 @@ class Auth
     }
 
     /**
-     * Mysql回调事件
-     * @param callable call  回调函数
-     * @return object Auth
-     * @author crazyCater
-     */
-    public function onMysqlCall(callable $call)
-    {
-        $this->config['call'] = $call;
-        return $this;
-    }
-
-    /**
      * @param int systemUserId 用户ID
      * @param array $checkUrlInfo url地址信息
      * @param callable checkUrlType 需验证的url串接方法
