@@ -12,6 +12,7 @@ use EasySwoole\ORM\AbstractModel;
 
 class Model extends AbstractModel
 {
+    protected static $instance;
     protected $autoTimeStamp = true;
     protected $createTime = 'create_time';
     protected $updateTime = 'update_time';
@@ -31,7 +32,15 @@ class Model extends AbstractModel
         parent::__construct($config);
     }
 
-    
+    public static function getInstance($options = [])
+    {
+        if (is_null(self::$instance)) {
+            self::$instance = new static($options);
+        }
+        return self::$instance;
+    }
+
+
     protected function getCreateTimeAttr($data)
     {
         return date('Y-m-d H:i:s', $data);
