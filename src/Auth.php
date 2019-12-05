@@ -13,7 +13,7 @@ use CrazyCater\EasySwooleAuth\Model\SystemAuthMenu;
 
 class Auth
 {
-
+    protected static $instance;
     protected $config = [
         'auth_on' => true,                // 认证开关
         'session' => false,               // 认证方式:false为实时认证,传SessionDriver则为session认证。
@@ -44,6 +44,14 @@ class Auth
             $this->config = array_merge($this->config, $config);
         }
         $this->prefix = !empty($this->config['mysql_prefix']) ? $this->config['mysql_prefix'] : \EasySwoole\EasySwoole\Config::getInstance()->getConf('MYSQL.prefix');
+    }
+
+    public static function getInstance($options = [])
+    {
+        if (is_null(self::$instance)) {
+            self::$instance = new static($options);
+        }
+        return self::$instance;
     }
 
     /**

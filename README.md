@@ -8,38 +8,35 @@ composer require crazycater/easyswoole-auth
 
 1.控制器调用方法
 ```php
-     $Auth = new \CrazyCater\EasySwooleAuth\Auth([
+      //默认验证方法
+     
+       $config =[  
           'session' => $this->session(),    // 认证方式:false为实时认证,传SessionDriver则为session认证。 默认：false实时认证
           'allow_userids' => [10000],  //不用检测权限的用户编号  默认空数组
           'allow_urls' => ['Admin/V1/SystemAuthMenu/tree'], //不用检测权限的URL 默认空数组
           'mysql_prefix' => 'cater_',  //表名前缀  默认Config配置文件中 MYSQL.prefix
-          
-          //以下参数不修改数据库名和字段名的 默认可不传
-        
-          //'auth_on' => true,             // 认证开关 默认：开
-          //'system_auth_group' => 'system_auth_group',        // 用户组数据表名 
-          //'system_auth_group_access' => 'system_auth_group_access', // 用户-用户组关系表
-          //'system_auth_menu' => 'system_auth_menu',         // 权限规则表
-          //'system_user' => 'system_user',            // 用户信息表
-          //'user_field_name' => 'system_user_id',                // 用户表ID字段名
-          //'group_field_name' => 'system_auth_group_id',    //用户组表组关联字段命
-          //'rules_field_name' => 'menus', //system_auth_group 表中存储规则的字段名
+           //以下参数不修改数据库名和字段名的 默认可不传
+           //'auth_on' => true,             // 认证开关 默认：开
+           //'system_auth_group' => 'system_auth_group',        // 用户组数据表名 
+           //'system_auth_group_access' => 'system_auth_group_access', // 用户-用户组关系表
+           //'system_auth_menu' => 'system_auth_menu',         // 权限规则表
+           //'system_user' => 'system_user',            // 用户信息表
+           //'user_field_name' => 'system_user_id',                // 用户表ID字段名
+           //'group_field_name' => 'system_auth_group_id',    //用户组表组关联字段命
+           //'rules_field_name' => 'menus', //system_auth_group 表中存储规则的字段名
           //'menu_pk_field_name' => 'system_auth_menu_id',
-          
-     ]);
-     //默认验证方法
+        ];  
       $authUrl = [
-          'module' => $this->moduleName,//项目分组可传可不传  用于多个项目分组
-          'controller' => $this->controllerName,//必须传
-          'action' => $this->actionName,//必须传
-          'params' => $this->request()->getRequestParam() //可传可不传
-       ];
-             
-     $check1 = $Auth->check($user_id, $authUrl);
+                  'module' => $this->moduleName,//项目分组可传可不传  用于多个项目分组
+                  'controller' => $this->controllerName,//必须传
+                  'action' => $this->actionName,//必须传
+                  'params' => $this->request()->getRequestParam() //可传可不传
+               ];   
+     $check1 = \CrazyCater\EasySwooleAuth\Auth::getInstance($config)->check($user_id, $authUrl);
      var_dump($check1);
     
     //可自定义url串接方式，第三个回调参数用来自定义串接要鉴权的URL地址，第四个回调参数用来自定义串接数据库查询出URL地址， 两者比对正确为鉴权通过
-     $check2 = $Auth->check($user_id, $authUrl,function ($urlInfo) {
+     $check2 = \CrazyCater\EasySwooleAuth\Auth::getInstance($config)->check($user_id, $authUrl,function ($urlInfo) {
            return $urlInfo['module'] . '-' . $urlInfo['controller'] . '-' .$urlInfo['action'] ;
        }, function ($urlInfo) {
            return $urlInfo['module'] . '-' . $urlInfo['url'] ;
