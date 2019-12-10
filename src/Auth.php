@@ -85,12 +85,9 @@ class Auth
                 $this->config['allow_urls'][$key] = \EasySwoole\Utility\Str::camel($val);
             }
         }
-        print_r($this->config['allow_urls']);
-        print_r($this->checkUrl);
         if (in_array($this->checkUrl, (array)$this->config['allow_urls'])) {
             return true;
         }
-
         if ($this->systemUserId <= 0) {
             return false;
         }
