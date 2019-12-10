@@ -37,9 +37,9 @@ class SystemAuthGroup extends Model
         $table->indexNormal('status', 'status');
         return $table;
     }
+
     public function getLists($module = 'Admin', $pid = 0, $title = '')
     {
-        $this->trace();
         if ($title) {
             $this->where('title', $title, 'like');
         }
@@ -49,7 +49,7 @@ class SystemAuthGroup extends Model
 
     public function getTree($module = 'Admin', $format = false)
     {
-        $lists = $this->trace()->where('module', $module)->where('status', 1)->order('sort', 'DESC')->order($this->schemaInfo()->getPkFiledName(), 'DESC')->select();
+        $lists = $this->where('module', $module)->where('status', 1)->order('sort', 'DESC')->order($this->schemaInfo()->getPkFiledName(), 'DESC')->select();
         $Tree = new \CrazyCater\Tree;
         $lists = $Tree->list_to_tree($lists, $this->schemaInfo()->getPkFiledName());
         if ($format === true) {

@@ -79,9 +79,18 @@ class Auth
         if (!$this->checkUrlInfo || empty($this->checkUrlInfo['controller']) || empty($this->checkUrlInfo['action'])) {
             return false;
         }
+        $this->config['allow_urls'] = (array)$this->config['allow_urls'];
+        if ($this->config['allow_urls']) {
+            foreach ($this->config['allow_urls'] as $key => $val) {
+                $this->config['allow_urls'][$key] = \EasySwoole\Utility\Str::camel($val);
+            }
+        }
+        print_r($this->config['allow_urls']);
+        print_r($this->checkUrl);
         if (in_array($this->checkUrl, (array)$this->config['allow_urls'])) {
             return true;
         }
+
         if ($this->systemUserId <= 0) {
             return false;
         }
@@ -236,9 +245,9 @@ class Auth
 
     private function _setcheckUrlInfo($checkUrlInfo = []): array
     {
-        $this->checkUrlInfo['module'] = $checkUrlInfo['module'] ?? '';
-        $this->checkUrlInfo['controller'] = $checkUrlInfo['controller'] ?? '';
-        $this->checkUrlInfo['action'] = $checkUrlInfo['action'] ?? '';
+        $this->checkUrlInfo['module'] = $checkUrlInfo['module'] ? \EasySwoole\Utility\Str::camel($checkUrlInfo['module']) : '';
+        $this->checkUrlInfo['controller'] = $checkUrlInfo['controller'] ? \EasySwoole\Utility\Str::camel($checkUrlInfo['controller']) : '';
+        $this->checkUrlInfo['action'] = $checkUrlInfo['action'] ? \EasySwoole\Utility\Str::camel($checkUrlInfo['action']) : '';
         $this->checkUrlInfo['params'] = !empty($checkUrlInfo['params']) ? array_keys($checkUrlInfo['params']) : [];
         return $this->checkUrlInfo;
     }
